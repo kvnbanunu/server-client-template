@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <stdint.h>
 
 typedef struct data_t
 {
@@ -27,26 +28,30 @@ int main(void)
     data_t      data = {0};
     char        addr_str[INET_ADDRSTRLEN];
     int         retval = EXIT_SUCCESS;
-    const char *msg    = "Hello, World\n";    // TEST
+    char *buf;
+    uint8_t len;
 
     setup(&data, addr_str);
-
     data.cfd = accept(data.fd, NULL, 0);
-    if(data.cfd < 0)
+    while(running)
     {
-        retval = EXIT_FAILURE;
-        goto cleanup;
+        if(data.cfd < 0)
+        {
+            retval = EXIT_FAILURE;
+            break;
+        }
+        if (read(data.cfd, &len, 1) < 1)
+        {
+            retval = EXIT_FAILURE;
+            break;
+        }
+        buf = (char *)malloc(len + 1);
+        read(data.cfd, buf, len);
+        buf[len] = '\0';
+        printf("Received: %s\n", buf);
+        free(buf);
     }
 
-    // TEST
-
-    write(data.cfd, msg, strlen(msg));
-
-    // TEST
-
-    /* Do stuff here */
-
-cleanup:
     cleanup(&data);
     exit(retval);
 }

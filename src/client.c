@@ -7,13 +7,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define MSGLEN 13
-
 typedef struct data_t
 {
     int                fd;
     struct sockaddr_in addr;
-    // socklen_t          addr_len;
     in_port_t port;
 } data_t;
 
@@ -30,20 +27,25 @@ int main(int argc, char *argv[])
     char  *addr_str = NULL;
     char  *port_str = NULL;
     int    retval   = EXIT_SUCCESS;
-    char   buf[MSGLEN + 1];    // TEST
-    buf[MSGLEN] = '\0';
+    char input[20];
+    ssize_t bytes_read;
+    uint8_t len;
 
     parse_args(argc, argv, &addr_str, &port_str, &data.port);
     setup(&data, addr_str);
 
-    // TEST
-
-    read(data.fd, buf, MSGLEN);
-    write(STDOUT_FILENO, buf, MSGLEN + 1);
-
-    // TEST
-
-    /* Do stuff here */
+    while(running)
+    {
+        memset(input, 0, 20);
+        bytes_read = read(STDIN_FILENO, input, 20);
+        if(input[0] == 'q' || bytes_read < 1)
+        {
+            break;
+        }
+        len = (uint8_t)bytes_read;
+        write(data.fd, &len, 1);
+        write(data.fd, input, bytes_read);
+    }
 
     cleanup(&data);
     exit(retval);
